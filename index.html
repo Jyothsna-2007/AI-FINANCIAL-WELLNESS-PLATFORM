@@ -11,15 +11,26 @@
     <nav>
       <a class="brand" href="#home">💡 AI Financial Wellness</a>
       <ul class="nav-links">
+        <li><a href="#home">Overview</a></li>
         <li><a href="#problem">Problem</a></li>
         <li><a href="#solution">Solution</a></li>
         <li><a href="#features">Features</a></li>
+        <li><a href="#account">Account</a></li>
+        <li><button class="btn-nav" id="openAuthModalBtn" type="button">Create Account</button></li>
         <li><a class="btn-nav" href="budget.html">Open Budget Planner</a></li>
       </ul>
     </nav>
   </header>
 
   <main>
+    <div class="home-tabs" role="tablist" aria-label="Home page sections">
+      <button class="tab-btn active" data-scroll-target="home" type="button">Overview</button>
+      <button class="tab-btn" data-scroll-target="problem" type="button">Problem</button>
+      <button class="tab-btn" data-scroll-target="solution" type="button">Solution</button>
+      <button class="tab-btn" data-scroll-target="features" type="button">Features</button>
+      <button class="tab-btn" data-scroll-target="account" type="button">Account</button>
+    </div>
+
     <section class="hero" id="home">
       <div>
         <h1>Build healthier money habits with AI guidance.</h1>
@@ -29,7 +40,8 @@
           recommendations and an interactive dashboard.
         </p>
         <div class="hero-actions">
-          <a class="btn-primary" href="budget.html">Try Budget Planner</a>
+          <button class="btn-primary" type="button" data-open-budget>Try Budget Planner</button>
+          <button class="btn-secondary" id="heroCreateAccountBtn" type="button">Create Account</button>
           <a class="btn-secondary" href="#features">Explore Features</a>
         </div>
         <div class="hero-stats">
@@ -65,23 +77,44 @@
 
     <section id="solution" class="card">
       <h2>Our Solution</h2>
+      <p>Every feature below is designed to help users take control of finances with practical guidance and clear action steps.</p>
       <div class="grid">
-        <div class="box">
+        <button class="box solution-card" type="button" data-solution="budgeting">
           <h3>💳 Smart Budgeting</h3>
           <p>Track income and expenses with intelligent recommendations.</p>
-        </div>
-        <div class="box">
+        </button>
+        <button class="box solution-card" type="button" data-solution="advice">
           <h3>🧠 AI Financial Advice</h3>
           <p>Receive custom suggestions for saving, spending, and planning.</p>
-        </div>
-        <div class="box">
+        </button>
+        <button class="box solution-card" type="button" data-solution="alerts">
           <h3>🔔 Smart Alerts</h3>
           <p>Stay informed about bills, overspending, and savings goals.</p>
-        </div>
-        <div class="box">
+        </button>
+        <button class="box solution-card" type="button" data-solution="dashboard">
           <h3>📊 Financial Dashboard</h3>
           <p>Visualize spending trends and future financial health.</p>
-        </div>
+        </button>
+      </div>
+
+      <div class="thought-box">
+        <label for="thoughtInput">Tell us your money concern</label>
+        <input id="thoughtInput" type="text" placeholder="e.g. I keep overspending or I miss bill payments" />
+        <button type="button" id="thoughtSubmitBtn">Find a solution</button>
+      </div>
+
+      <div class="solution-detail" id="solutionDetail">
+        <h3 id="solutionDetailTitle">Select a feature to view details</h3>
+        <p id="solutionDetailText">Choose any solution card above or describe your concern to see the most relevant solution.</p>
+      </div>
+    </section>
+
+    <section id="account" class="card">
+      <h2>Secure Account Access</h2>
+      <p>Create an account to save your budget history, revisit your past planning sessions, and keep your financial records in one place.</p>
+      <div class="account-card">
+        <div id="accountStatus" class="account-status">No account yet. Create one to get started.</div>
+        <button class="btn-primary" id="accountOpenModalBtn" type="button">Create / Login</button>
       </div>
     </section>
 
@@ -119,5 +152,213 @@
   <footer>
     <p>© 2026 AI Financial Wellness Platform</p>
   </footer>
+
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal-content">
+      <button class="modal-close" id="closeAuthModal" type="button">×</button>
+      <h2>Welcome</h2>
+      <p>Sign up or log in to save your budget history.</p>
+      <div class="auth-toggle">
+        <button class="auth-mode active" data-auth-mode="signup" type="button">Create Account</button>
+        <button class="auth-mode" data-auth-mode="login" type="button">Login</button>
+      </div>
+      <form id="signupForm" class="auth-form">
+        <input type="text" id="signupName" placeholder="Your name" required />
+        <input type="email" id="signupEmail" placeholder="Email address" required />
+        <input type="password" id="signupPassword" placeholder="Password" required />
+        <button type="submit">Create account</button>
+      </form>
+      <form id="loginForm" class="auth-form hidden">
+        <input type="email" id="loginEmail" placeholder="Email address" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <p id="authMessage" class="auth-message"></p>
+    </div>
+  </div>
+
+  <script>
+    function getStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem("financialUser"));
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveStoredUser(user) {
+      localStorage.setItem("financialUser", JSON.stringify(user));
+    }
+
+    function updateAccountStatus(user) {
+      const status = document.getElementById("accountStatus");
+      if (status) {
+        status.innerHTML = user
+          ? `Signed in as <strong>${user.name}</strong> (${user.email}). Your past budgets are saved.`
+          : "No account yet. Create one to get started.";
+      }
+    }
+
+    function openAuthModal() {
+      const modal = document.getElementById("authModal");
+      if (modal) {
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById("authModal");
+      if (modal) {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    async function handleAuth(mode, formData) {
+      const messageBox = document.getElementById("authMessage");
+      try {
+        const response = await fetch("/api/auth/" + mode, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Unable to process your request");
+        }
+
+        saveStoredUser(data.user);
+        updateAccountStatus(data.user);
+        closeAuthModal();
+        if (messageBox) {
+          messageBox.textContent = mode === "signup" ? "Account created successfully." : "Login successful.";
+        }
+      } catch (error) {
+        const fallbackUser = {
+          id: Date.now().toString(),
+          name: formData.name || formData.email.split("@")[0],
+          email: formData.email,
+          password: formData.password
+        };
+        saveStoredUser(fallbackUser);
+        updateAccountStatus(fallbackUser);
+        closeAuthModal();
+        if (messageBox) {
+          messageBox.textContent = "Saved locally. Start the server to sync with the cloud account.";
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateAccountStatus(getStoredUser());
+
+      document.querySelectorAll("[data-open-budget]").forEach((button) => {
+        button.addEventListener("click", () => {
+          window.location.href = "budget.html";
+        });
+      });
+
+      document.querySelectorAll(".tab-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach((tab) => tab.classList.remove("active"));
+          button.classList.add("active");
+          const target = document.getElementById(button.dataset.scrollTarget);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+      });
+
+      document.getElementById("openAuthModalBtn")?.addEventListener("click", openAuthModal);
+      document.getElementById("heroCreateAccountBtn")?.addEventListener("click", openAuthModal);
+      document.getElementById("accountOpenModalBtn")?.addEventListener("click", openAuthModal);
+      document.getElementById("closeAuthModal")?.addEventListener("click", closeAuthModal);
+      document.getElementById("authModal")?.addEventListener("click", (event) => {
+        if (event.target.id === "authModal") {
+          closeAuthModal();
+        }
+      });
+
+      document.querySelectorAll(".auth-mode").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".auth-mode").forEach((mode) => mode.classList.remove("active"));
+          button.classList.add("active");
+          const mode = button.dataset.authMode;
+          document.getElementById("signupForm").classList.toggle("hidden", mode !== "signup");
+          document.getElementById("loginForm").classList.toggle("hidden", mode !== "login");
+        });
+      });
+
+      function showSolution(key) {
+        const title = document.getElementById("solutionDetailTitle");
+        const text = document.getElementById("solutionDetailText");
+
+        const details = {
+          budgeting: {
+            title: "Smart Budgeting",
+            text: "This feature helps users who overspend or struggle to track monthly expenses by showing where their money is going and suggesting a better plan."
+          },
+          advice: {
+            title: "AI Financial Advice",
+            text: "This feature gives personalized guidance when users want help deciding how much to save, what to cut, and how to plan for future goals."
+          },
+          alerts: {
+            title: "Smart Alerts",
+            text: "This feature supports users who often miss bills or exceed limits by sending reminders and warnings before small issues become bigger problems."
+          },
+          dashboard: {
+            title: "Financial Dashboard",
+            text: "This feature is useful for users who want a clear visual overview of income, spending, savings, and financial progress over time."
+          }
+        };
+
+        const selected = details[key] || details.budgeting;
+        title.textContent = selected.title;
+        text.textContent = selected.text;
+      }
+
+      document.querySelectorAll(".solution-card").forEach((button) => {
+        button.addEventListener("click", () => {
+          showSolution(button.dataset.solution);
+        });
+      });
+
+      document.getElementById("thoughtSubmitBtn")?.addEventListener("click", () => {
+        const input = document.getElementById("thoughtInput");
+        const value = (input?.value || "").toLowerCase();
+
+        if (value.includes("overspend") || value.includes("spend") || value.includes("budget") || value.includes("expense")) {
+          showSolution("budgeting");
+        } else if (value.includes("save") || value.includes("plan") || value.includes("goal") || value.includes("future")) {
+          showSolution("advice");
+        } else if (value.includes("bill") || value.includes("miss") || value.includes("alert") || value.includes("remind")) {
+          showSolution("alerts");
+        } else if (value.includes("dashboard") || value.includes("track") || value.includes("overview") || value.includes("progress")) {
+          showSolution("dashboard");
+        } else {
+          showSolution("budgeting");
+        }
+      });
+
+      document.getElementById("signupForm")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        handleAuth("signup", {
+          name: document.getElementById("signupName").value,
+          email: document.getElementById("signupEmail").value,
+          password: document.getElementById("signupPassword").value
+        });
+      });
+
+      document.getElementById("loginForm")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        handleAuth("login", {
+          email: document.getElementById("loginEmail").value,
+          password: document.getElementById("loginPassword").value
+        });
+      });
+    });
+  </script>
 </body>
 </html>

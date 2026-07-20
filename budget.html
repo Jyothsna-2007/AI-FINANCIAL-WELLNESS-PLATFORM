@@ -9,7 +9,10 @@
 <body>
   <header>
     <h1>💰 AI Budget Planner</h1>
-    <a href="index.html">⬅ Back to Home</a>
+    <div class="header-actions">
+      <span id="userBadge" class="user-badge">Guest mode</span>
+      <a href="index.html">⬅ Back to Home</a>
+    </div>
   </header>
 
   <section class="container">
@@ -34,7 +37,8 @@
         <label>Other Expenses</label>
         <input type="number" id="other" placeholder="Other" />
 
-        <button onclick="calculateBudget()">Calculate Budget</button>
+        <button type="button" id="calculateBudgetButton">Calculate Budget</button>
+        <button type="button" id="clearFormButton" class="secondary-btn">Clear Form</button>
       </div>
 
       <div class="result">
@@ -43,10 +47,15 @@
         <p id="remaining">Remaining Balance: ₹0</p>
         <p id="advice">Your AI suggestion will appear here.</p>
         <p class="highlight" id="insight"></p>
+        <div class="history-block">
+          <h3>Saved Budget History</h3>
+          <ul id="historyList" class="history-list"></ul>
+        </div>
       </div>
     </div>
   </section>
 
+  <script src="budgetLogic.js"></script>
   <script src="budget.js"></script>
 </body>
 </html>

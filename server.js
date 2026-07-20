@@ -1,58 +1,117 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
+const fs = require('fs');
+const { calculateBudgetSummary } = require('./budgetLogic');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const dataDir = path.join(__dirname, 'data');
+const usersFile = path.join(dataDir, 'users.json');
+const budgetsFile = path.join(dataDir, 'budgets.json');
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function loadJson(file, fallback) {
+  if (!fs.existsSync(file)) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function saveJson(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+let users = loadJson(usersFile, []);
+let budgets = loadJson(budgetsFile, []);
 
 app.use(cors());
 app.use(bodyParser.json());
-
-function calculateBudgetSummary(data) {
-  const income = Number(data.income) || 0;
-  const food = Number(data.food) || 0;
-  const transport = Number(data.transport) || 0;
-  const shopping = Number(data.shopping) || 0;
-  const rent = Number(data.rent) || 0;
-  const other = Number(data.other) || 0;
-
-  const total = food + transport + shopping + rent + other;
-  const remaining = income - total;
-  const savingsRate = income > 0 ? (remaining / income) * 100 : 0;
-
-  let advice = '';
-  let insight = '';
-
-  if (income <= 0) {
-    advice = '⚠ Enter your monthly income to get AI-based recommendations.';
-  } else if (remaining > income * 0.3) {
-    advice = '✅ Excellent! Your budget is healthy and you are saving well.';
-    insight = 'AI Insight: You can increase your emergency fund or invest a part of your savings.';
-  } else if (remaining > 0) {
-    advice = '⚠ You are spending close to your limit. Reduce non-essential spending.';
-    insight = 'AI Insight: Try cutting shopping or dining costs to improve your savings rate to 20%+.';
-  } else {
-    advice = '❌ Your expenses exceed your income. Consider reducing discretionary spending.';
-    insight = 'AI Insight: Prioritize essentials, review subscriptions, and set a strict spending cap.';
-  }
-
-  return {
-    income,
-    total,
-    remaining,
-    savingsRate,
-    advice,
-    insight: `${insight} Savings rate: ${savingsRate.toFixed(1)}%`.trim(),
-  };
-}
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-  res.send('AI Financial Wellness API is running');
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/budget.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'budget.html'));
+});
+
+app.post('/api/auth/signup', (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Please provide name, email, and password.' });
+  }
+
+  const existing = users.find((user) => user.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    return res.status(409).json({ message: 'An account with that email already exists.' });
+  }
+
+  const user = {
+    id: Date.now().toString(),
+    name,
+    email,
+    password,
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(user);
+  saveJson(usersFile, users);
+  res.json({ message: 'Account created', user: { id: user.id, name: user.name, email: user.email } });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Please provide email and password.' });
+  }
+
+  const user = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase() && entry.password === password);
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid email or password.' });
+  }
+
+  res.json({ message: 'Login successful', user: { id: user.id, name: user.name, email: user.email } });
 });
 
 app.post('/api/budget', (req, res) => {
   const result = calculateBudgetSummary(req.body);
+  const { email, ...payload } = req.body;
+
+  if (email) {
+    const user = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
+    if (user) {
+      budgets.push({
+        id: Date.now().toString(),
+        name: user.name,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+        ...payload,
+        ...result
+      });
+      saveJson(budgetsFile, budgets);
+    }
+  }
+
   res.json(result);
+});
+
+app.get('/api/budgets/:email', (req, res) => {
+  const email = req.params.email.toLowerCase();
+  const userBudgets = budgets.filter((entry) => entry.email.toLowerCase() === email);
+  res.json(userBudgets.slice(-6).reverse());
 });
 
 app.listen(PORT, () => {
