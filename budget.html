@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Budget Planner</title>
+  <link rel="stylesheet" href="budget.css" />
+</head>
+<body>
+  <header>
+    <h1>💰 AI Budget Planner</h1>
+    <a href="index.html">⬅ Back to Home</a>
+  </header>
+
+  <section class="container">
+    <h2>Monthly Budget Planner</h2>
+    <div class="panel">
+      <div class="budget-box">
+        <label>Monthly Income</label>
+        <input type="number" id="income" placeholder="Enter income" />
+
+        <label>Food Expense</label>
+        <input type="number" id="food" placeholder="Food" />
+
+        <label>Transport Expense</label>
+        <input type="number" id="transport" placeholder="Transport" />
+
+        <label>Shopping Expense</label>
+        <input type="number" id="shopping" placeholder="Shopping" />
+
+        <label>Rent</label>
+        <input type="number" id="rent" placeholder="Rent" />
+
+        <label>Other Expenses</label>
+        <input type="number" id="other" placeholder="Other" />
+
+        <button onclick="calculateBudget()">Calculate Budget</button>
+      </div>
+
+      <div class="result">
+        <h2>Budget Summary</h2>
+        <p id="totalExpense">Total Expenses: ₹0</p>
+        <p id="remaining">Remaining Balance: ₹0</p>
+        <p id="advice">Your AI suggestion will appear here.</p>
+        <p class="highlight" id="insight"></p>
+      </div>
+    </div>
+  </section>
+
+  <script src="budget.js"></script>
+</body>
+</html>
